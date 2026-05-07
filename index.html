@@ -1,0 +1,1457 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Compliance Assistant — PMS/AIF Knowledge Bot</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0d0f14;
+    --surface: #13161e;
+    --surface2: #1a1e28;
+    --border: #252a38;
+    --accent: #e8c97a;
+    --accent2: #7ac8e8;
+    --accent3: #e87a9a;
+    --text: #e8e6df;
+    --muted: #7a7f8e;
+    --user-bubble: #1e2538;
+    --bot-bubble: #161a24;
+    --danger: #e87a7a;
+    --success: #7ae8b0;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  /* Top Bar */
+  .topbar {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 0 24px;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+    position: relative;
+    z-index: 10;
+  }
+
+  .topbar-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .logo-mark {
+    width: 36px;
+    height: 36px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+  }
+
+  .title-group h1 {
+    font-family: 'DM Serif Display', serif;
+    font-size: 16px;
+    color: var(--text);
+    letter-spacing: 0.02em;
+  }
+
+  .title-group p {
+    font-size: 11px;
+    color: var(--muted);
+    font-weight: 300;
+    margin-top: 1px;
+  }
+
+  .topbar-right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .doc-count {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 4px 12px;
+    font-size: 11px;
+    color: var(--muted);
+    font-family: 'DM Mono', monospace;
+  }
+
+  .doc-count span {
+    color: var(--accent);
+    font-weight: 500;
+  }
+
+  .api-config-btn {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 12px;
+    padding: 6px 14px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.15s;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .api-config-btn:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  /* API Key Modal */
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.7);
+    backdrop-filter: blur(4px);
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s;
+  }
+
+  .modal-overlay.open {
+    opacity: 1;
+    pointer-events: all;
+  }
+
+  .modal {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 32px;
+    width: 480px;
+    max-width: 95vw;
+    transform: translateY(12px);
+    transition: transform 0.2s;
+  }
+
+  .modal-overlay.open .modal {
+    transform: translateY(0);
+  }
+
+  .modal h2 {
+    font-family: 'DM Serif Display', serif;
+    font-size: 22px;
+    margin-bottom: 8px;
+  }
+
+  .modal p {
+    font-size: 13px;
+    color: var(--muted);
+    line-height: 1.6;
+    margin-bottom: 24px;
+  }
+
+  .modal label {
+    display: block;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--muted);
+    margin-bottom: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+
+  .modal input, .modal select {
+    width: 100%;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 10px 14px;
+    border-radius: 8px;
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+    outline: none;
+    transition: border-color 0.15s;
+    margin-bottom: 16px;
+  }
+
+  .modal input:focus, .modal select:focus {
+    border-color: var(--accent);
+  }
+
+  .modal-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+    margin-top: 8px;
+  }
+
+  .btn {
+    padding: 9px 20px;
+    border-radius: 8px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    border: 1px solid transparent;
+    transition: all 0.15s;
+  }
+
+  .btn-ghost {
+    background: transparent;
+    border-color: var(--border);
+    color: var(--muted);
+  }
+
+  .btn-ghost:hover { color: var(--text); border-color: var(--muted); }
+
+  .btn-primary {
+    background: var(--accent);
+    color: var(--bg);
+    font-weight: 600;
+  }
+
+  .btn-primary:hover { opacity: 0.88; }
+
+  /* Status bar */
+  .status-bar {
+    height: 38px;
+    background: var(--surface2);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    padding: 0 24px;
+    gap: 20px;
+    flex-shrink: 0;
+  }
+
+  .status-pill {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    color: var(--muted);
+  }
+
+  .status-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--danger);
+    transition: background 0.3s;
+  }
+
+  .status-dot.connected { background: var(--success); }
+
+  .status-pill.has-key .label { color: var(--success); }
+
+  .model-tag {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    color: var(--accent2);
+    background: rgba(122, 200, 232, 0.08);
+    padding: 2px 8px;
+    border-radius: 4px;
+    border: 1px solid rgba(122, 200, 232, 0.2);
+  }
+
+  /* Document pills */
+  .doc-pills {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+    margin-left: auto;
+  }
+
+  .doc-pills::-webkit-scrollbar { display: none; }
+
+  .doc-pill {
+    font-size: 10px;
+    padding: 2px 8px;
+    background: rgba(232, 201, 122, 0.08);
+    border: 1px solid rgba(232, 201, 122, 0.2);
+    border-radius: 4px;
+    color: var(--accent);
+    white-space: nowrap;
+    font-family: 'DM Mono', monospace;
+  }
+
+  /* Chat container */
+  .chat-area {
+    flex: 1;
+    overflow-y: auto;
+    padding: 28px 0;
+    scroll-behavior: smooth;
+  }
+
+  .chat-area::-webkit-scrollbar { width: 4px; }
+  .chat-area::-webkit-scrollbar-track { background: transparent; }
+  .chat-area::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+  .messages-container {
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 0 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+  }
+
+  /* Welcome screen */
+  .welcome {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    padding: 48px 24px;
+    gap: 24px;
+  }
+
+  .welcome-icon {
+    width: 72px;
+    height: 72px;
+    background: linear-gradient(135deg, rgba(232,201,122,0.15), rgba(122,200,232,0.15));
+    border: 1px solid rgba(232,201,122,0.25);
+    border-radius: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 32px;
+  }
+
+  .welcome h2 {
+    font-family: 'DM Serif Display', serif;
+    font-size: 28px;
+    color: var(--text);
+    line-height: 1.2;
+  }
+
+  .welcome p {
+    font-size: 14px;
+    color: var(--muted);
+    max-width: 480px;
+    line-height: 1.7;
+  }
+
+  .welcome-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: center;
+    max-width: 600px;
+  }
+
+  .chip {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 8px 16px;
+    font-size: 12.5px;
+    color: var(--muted);
+    cursor: pointer;
+    transition: all 0.15s;
+    text-align: left;
+    line-height: 1.4;
+  }
+
+  .chip:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: rgba(232,201,122,0.06);
+  }
+
+  /* Messages */
+  .message {
+    display: flex;
+    gap: 12px;
+    animation: msgIn 0.2s ease-out;
+  }
+
+  @keyframes msgIn {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .message.user {
+    flex-direction: row-reverse;
+  }
+
+  .avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    font-weight: 600;
+    margin-top: 2px;
+  }
+
+  .message.user .avatar {
+    background: linear-gradient(135deg, var(--accent), #c8a840);
+    color: var(--bg);
+    font-family: 'DM Mono', monospace;
+  }
+
+  .message.bot .avatar {
+    background: linear-gradient(135deg, var(--accent2), #5ab0d0);
+    color: var(--bg);
+  }
+
+  .bubble {
+    max-width: 620px;
+    padding: 14px 18px;
+    border-radius: 12px;
+    font-size: 14px;
+    line-height: 1.7;
+  }
+
+  .message.user .bubble {
+    background: var(--user-bubble);
+    border: 1px solid rgba(122, 200, 232, 0.15);
+    border-bottom-right-radius: 3px;
+    color: var(--text);
+  }
+
+  .message.bot .bubble {
+    background: var(--bot-bubble);
+    border: 1px solid var(--border);
+    border-bottom-left-radius: 3px;
+    color: var(--text);
+  }
+
+  .bubble-meta {
+    font-size: 10px;
+    color: var(--muted);
+    margin-bottom: 6px;
+    font-family: 'DM Mono', monospace;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+
+  .bubble p { margin-bottom: 10px; }
+  .bubble p:last-child { margin-bottom: 0; }
+  .bubble strong { color: var(--accent); font-weight: 600; }
+  .bubble em { color: var(--accent2); font-style: normal; font-weight: 500; }
+
+  .bubble ul, .bubble ol {
+    margin: 8px 0;
+    padding-left: 20px;
+  }
+
+  .bubble li {
+    margin-bottom: 4px;
+    color: var(--text);
+  }
+
+  .bubble code {
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    background: rgba(255,255,255,0.06);
+    padding: 2px 6px;
+    border-radius: 4px;
+    color: var(--accent2);
+  }
+
+  .bubble table {
+    border-collapse: collapse;
+    width: 100%;
+    margin: 10px 0;
+    font-size: 12.5px;
+  }
+
+  .bubble th {
+    background: var(--surface2);
+    padding: 8px 12px;
+    text-align: left;
+    border: 1px solid var(--border);
+    color: var(--accent);
+    font-weight: 600;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .bubble td {
+    padding: 7px 12px;
+    border: 1px solid var(--border);
+    color: var(--text);
+  }
+
+  .bubble tr:nth-child(even) td { background: rgba(255,255,255,0.02); }
+
+  /* Typing indicator */
+  .typing-indicator {
+    display: flex;
+    gap: 4px;
+    padding: 6px 4px;
+    align-items: center;
+  }
+
+  .typing-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--accent2);
+    opacity: 0.4;
+    animation: typingPulse 1.4s infinite;
+  }
+
+  .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+  .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+  @keyframes typingPulse {
+    0%, 80%, 100% { opacity: 0.3; transform: scale(0.8); }
+    40% { opacity: 1; transform: scale(1.1); }
+  }
+
+  /* Error bubble */
+  .error-bubble {
+    background: rgba(232, 122, 122, 0.08);
+    border: 1px solid rgba(232, 122, 122, 0.25);
+    color: var(--danger);
+    padding: 12px 16px;
+    border-radius: 10px;
+    font-size: 13px;
+    display: flex;
+    gap: 8px;
+    align-items: flex-start;
+  }
+
+  /* Input area */
+  .input-area {
+    flex-shrink: 0;
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    padding: 16px 24px 20px;
+  }
+
+  .input-wrapper {
+    max-width: 760px;
+    margin: 0 auto;
+    display: flex;
+    gap: 10px;
+    align-items: flex-end;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 10px 12px 10px 16px;
+    transition: border-color 0.15s;
+  }
+
+  .input-wrapper:focus-within {
+    border-color: rgba(232,201,122,0.4);
+  }
+
+  #userInput {
+    flex: 1;
+    background: transparent;
+    border: none;
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    outline: none;
+    resize: none;
+    max-height: 140px;
+    min-height: 22px;
+    line-height: 1.5;
+    scrollbar-width: thin;
+  }
+
+  #userInput::placeholder { color: var(--muted); }
+
+  .send-btn {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    background: var(--accent);
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: all 0.15s;
+    color: var(--bg);
+  }
+
+  .send-btn:hover:not(:disabled) { opacity: 0.85; transform: scale(1.04); }
+  .send-btn:disabled { opacity: 0.35; cursor: not-allowed; transform: none; }
+
+  .send-btn svg { width: 16px; height: 16px; }
+
+  .input-footer {
+    max-width: 760px;
+    margin: 8px auto 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .input-hint {
+    font-size: 11px;
+    color: var(--muted);
+  }
+
+  .clear-btn {
+    font-size: 11px;
+    color: var(--muted);
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    padding: 0;
+    transition: color 0.1s;
+  }
+
+  .clear-btn:hover { color: var(--danger); }
+
+  /* Scrollbar */
+  * { scrollbar-width: thin; scrollbar-color: var(--border) transparent; }
+</style>
+</head>
+<body>
+
+<!-- API Key Modal -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <h2>⚙️ Configure API</h2>
+    <p>Enter your Groq API key to activate the compliance assistant. Your key is stored locally in your browser and never sent anywhere except directly to Groq's API.</p>
+    <label>Groq API Key</label>
+    <input type="password" id="apiKeyInput" placeholder="gsk_..." autocomplete="off" />
+    <label>Model</label>
+    <select id="modelSelect">
+      <option value="llama-3.3-70b-versatile">Llama 3.3 70B Versatile (Recommended)</option>
+      <option value="llama-3.1-8b-instant">Llama 3.1 8B Instant (Fast)</option>
+      <option value="mixtral-8x7b-32768">Mixtral 8x7B</option>
+      <option value="gemma2-9b-it">Gemma2 9B</option>
+    </select>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" id="modalCancelBtn">Cancel</button>
+      <button class="btn btn-primary" id="modalSaveBtn">Save & Connect</button>
+    </div>
+  </div>
+</div>
+
+<!-- Top Bar -->
+<div class="topbar">
+  <div class="topbar-left">
+    <div class="logo-mark">⚖️</div>
+    <div class="title-group">
+      <h1>Compliance Assistant</h1>
+      <p>PMS / AIF / AML Knowledge Bot</p>
+    </div>
+  </div>
+  <div class="topbar-right">
+    <div class="doc-count"><span>5</span> docs loaded</div>
+    <button class="api-config-btn" id="configBtn">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 0-14.14 0M4.93 19.07a10 10 0 0 0 14.14 0M12 2v2M12 20v2M2 12H4M20 12h2"/></svg>
+      API Settings
+    </button>
+  </div>
+</div>
+
+<!-- Status Bar -->
+<div class="status-bar">
+  <div class="status-pill" id="statusPill">
+    <div class="status-dot" id="statusDot"></div>
+    <span class="label" id="statusLabel">No API key — click API Settings</span>
+  </div>
+  <div class="model-tag" id="modelTag">Model: —</div>
+  <div class="doc-pills">
+    <div class="doc-pill">AML Red Flag Matrix</div>
+    <div class="doc-pill">Compliance Handbook</div>
+    <div class="doc-pill">Onboarding Manual</div>
+    <div class="doc-pill">Ops FAQ</div>
+    <div class="doc-pill">Reference Docs</div>
+  </div>
+</div>
+
+<!-- Chat Area -->
+<div class="chat-area" id="chatArea">
+  <div class="messages-container" id="messagesContainer">
+    <div class="welcome" id="welcomeScreen">
+      <div class="welcome-icon">📋</div>
+      <h2>Ask me anything about<br>compliance & operations</h2>
+      <p>I have full knowledge of your 5 uploaded documents covering AML red flags, KYC/CKYC, investor onboarding, FATCA/CRS, EDD, audit readiness, and operations FAQs. Set your Groq API key to get started.</p>
+      <div class="welcome-chips">
+        <div class="chip" onclick="sendChip(this)">What are the AML red flags for high-risk clients?</div>
+        <div class="chip" onclick="sendChip(this)">What documents are needed to onboard an NRI investor?</div>
+        <div class="chip" onclick="sendChip(this)">Can investment proceed if KYC is On Hold?</div>
+        <div class="chip" onclick="sendChip(this)">What is the escalation process for suspicious transactions?</div>
+        <div class="chip" onclick="sendChip(this)">Explain EDD requirements and when they apply</div>
+        <div class="chip" onclick="sendChip(this)">What are maker-checker controls?</div>
+        <div class="chip" onclick="sendChip(this)">What are the FATCA common errors to avoid?</div>
+        <div class="chip" onclick="sendChip(this)">List documents required for entity onboarding</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Input Area -->
+<div class="input-area">
+  <div class="input-wrapper">
+    <textarea id="userInput" placeholder="Ask about KYC, AML, onboarding procedures, red flags..." rows="1"></textarea>
+    <button class="send-btn" id="sendBtn" disabled>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="22" y1="2" x2="11" y2="13"/>
+        <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+      </svg>
+    </button>
+  </div>
+  <div class="input-footer">
+    <span class="input-hint">Press Enter to send · Shift+Enter for new line</span>
+    <button class="clear-btn" onclick="clearChat()">Clear chat</button>
+  </div>
+</div>
+
+<script>
+// ─── Document Knowledge Base ─────────────────────────────────────────────────
+const KNOWLEDGE_BASE = `
+You are a compliance assistant for a PMS/AIF financial services operations team. You have deep knowledge of the following 5 internal documents. Always answer based on this knowledge. Be precise, professional, and structured. Format answers with clear headings and bullet points when appropriate.
+
+=== DOCUMENT 1: AML Red Flag Matrix ===
+
+PURPOSE: Identify suspicious investor behavior, assist operations and compliance teams, standardize AML monitoring, support escalation and reporting.
+
+AML RISK CLASSIFICATION:
+- Low: Minor concern requiring monitoring
+- Medium: Elevated concern requiring review
+- High: Significant concern requiring escalation
+- Critical: Immediate escalation and possible STR review
+
+1. INVESTOR IDENTITY RED FLAGS:
+- Investor refuses KYC docs → High → Escalate to Compliance
+- Frequent changes in personal details → Medium → Obtain supporting documents
+- PAN mismatch across documents → High → Stop processing
+- Multiple investors using same contact → Medium → Review relationship
+- Forged/altered documents → Critical → Immediate escalation
+- Reluctance to complete IPV → High → Reject onboarding
+- Investor unable to explain business activity → High → Conduct EDD
+
+2. TRANSACTION RED FLAGS:
+- Large transactions inconsistent with profile → High → Source of funds check
+- Sudden increase in investment size → Medium → Enhanced review
+- Frequent subscription and redemption → High → Escalate for AML review
+- Multiple transactions below reporting threshold → High → Monitor and escalate (structuring/smurfing)
+- Third-party payments received → Critical → Reject/hold transaction
+- Immediate redemption after investment → High → AML review
+- Unusual transaction timing → Medium → Review pattern
+
+3. BANK ACCOUNT RED FLAGS:
+- Bank account not matching investor name → High → Reject until clarified
+- Multiple bank accounts without rationale → Medium → Seek explanation
+- Frequent changes in bank account → Medium → Enhanced verification
+- Offshore bank account usage → High → EDD review
+- Transactions from high-risk jurisdictions → Critical → Immediate escalation
+- Payment from unrelated entity → Critical → Compliance escalation
+
+4. ENTITY / CORPORATE INVESTOR RED FLAGS:
+- Complex ownership structure without rationale → High → EDD review
+- Frequent changes in directors/shareholders → Medium → Verify structure
+- Shell company indicators → Critical → Escalate immediately
+- No identifiable business activity → High → Conduct investigation
+- Nominee shareholders without clarity → High → Obtain declarations
+- Offshore layered structures → Critical → Senior compliance review
+- Inability to identify UBO → Critical → Reject onboarding
+
+5. PEP & HIGH-RISK CLIENT RED FLAGS:
+- PEP identified → High → Enhanced Due Diligence
+- Adverse media identified → High → Compliance review
+- Investor linked to sanctioned country → Critical → Immediate escalation
+- Client reluctant to disclose source of wealth → High → Hold onboarding
+- High-value investments from high-risk geography → High → EDD review
+
+6. BEHAVIORAL RED FLAGS:
+- Investor defensive during questioning → Medium → Record observations
+- Investor pushes for urgent processing → Medium → Escalate if unusual
+- Refusal to provide additional information → High → Stop processing
+- Use of intermediaries without clarity → Medium → Verify authority
+- Frequent unexplained modifications → Medium → Monitor closely
+
+7. DOCUMENTATION RED FLAGS:
+- Blurred/cropped documents → Medium → Obtain fresh copy
+- Signature mismatch → Medium → Reverification
+- Expired ID proof → Low → Obtain updated proof
+- Different signatures across forms → High → Escalate
+- Incomplete onboarding forms → Medium → Clarify before processing
+
+AML MONITORING TRIGGERS:
+- High-value unusual transaction → AML review
+- Offshore fund flow → EDD review
+- Sanctions match → Immediate escalation
+- Multiple failed KYC attempts → Compliance review
+- Unusual redemption pattern → Transaction monitoring
+
+SUSPICIOUS ACTIVITY ESCALATION PROCESS:
+Step 1 – Identify: Operations team identifies unusual activity
+Step 2 – Document: Record transaction details, investor explanation, supporting evidence
+Step 3 – Escalate: Escalate to Compliance, Principal Officer, AML Officer
+Step 4 – Review: Compliance performs transaction analysis, risk assessment, documentation review
+Step 5 – Decision: Proceed / Reject / Enhanced monitoring / STR consideration
+
+EMPLOYEE RESPONSIBILITIES:
+MUST: Remain vigilant, escalate suspicious activity, maintain confidentiality, preserve documentation
+MUST NOT: Ignore unusual behavior, process incomplete transactions, tip off client about AML suspicion, override controls without approval
+
+STR INDICATORS: Unexplained source of funds, circular transactions, layering patterns, high-risk geography, proxies/nominees, unusual transaction behavior
+
+AML ESCALATION MATRIX:
+- Minor discrepancy → Operations
+- Suspicious transaction → Compliance
+- Sanctions match → Principal Officer
+- Terror financing concern → Senior Management
+
+HIGH-RISK JURISDICTION MONITORING: FATF high-risk jurisdictions, sanctioned countries, countries with weak AML controls, tax havens
+
+IMPORTANT PRINCIPLES:
+- "Know Your Customer" – Understand investor profile and transaction rationale
+- "Substance Over Form" – Assess actual economic purpose, not just documentation
+- "If Suspicious – Escalate" – Never independently dismiss AML concerns
+
+=== DOCUMENT 2: Compliance Knowledge Handbook ===
+
+REGULATORS:
+- SEBI: Securities market regulator
+- FIU-India: AML reporting authority
+- CERSAI: CKYC registry
+- AMFI: KYC framework support
+- NSDL: Depository & compliance infrastructure
+
+KYC OVERVIEW:
+KYC = Know Your Customer. Process of verifying identity and address before onboarding.
+Objectives: Prevent fraud, ensure investor authenticity, meet regulatory obligations.
+Components: PAN verification, address proof, identity proof, IPV, FATCA declaration.
+
+KYC STATUS TABLE:
+- Registered: KYC available
+- Validated: KYC fully verified
+- On Hold: Clarification/document issue
+- Rejected: KYC failed
+
+COMMON KYC ISSUES AND ACTIONS:
+- Name mismatch → Obtain supporting proof
+- PAN mismatch → Verify PAN database
+- Blurred documents → Obtain clear copies
+- Signature mismatch → Fresh signature required
+
+KRA: KYC Registration Agencies maintain centralized investor KYC records.
+
+CKYC: Central KYC Registry by CERSAI. 14-digit CKYC number. Common across financial institutions.
+CKYC Types: Normal (Full KYC), Simplified (Limited KYC), Small Account (Restricted)
+Key checks: PAN consistency, OVD validity, photograph clarity, address match
+
+AML FRAMEWORK:
+AML = Anti-Money Laundering measures to identify/prevent illegal financial activities.
+Objectives: Detect suspicious transactions, prevent financial crimes, ensure compliance.
+Risk Categories: Low (salaried), Medium (HNIs), High (PEPs, offshore entities)
+AML Red Flags: Frequent large transactions, third-party transfers, unusual redemptions, complex ownership
+AML Controls: Screening, monitoring, transaction review, escalation
+
+EDD (Enhanced Due Diligence):
+Additional due diligence for high-risk clients.
+High-risk clients: PEPs, NRIs from high-risk jurisdictions, Trusts, Foreign entities, Complex structures
+EDD Requirements: Source of Funds (validate legitimacy), Source of Wealth (understand origin), Adverse Media Check, Sanctions Screening
+Escalation triggers: UBO ambiguity, negative media, sanctions match
+
+FIU REPORTING:
+FIU-India receives suspicious transaction reports.
+Report types: STR (Suspicious Transaction Report), CTR (Cash Transaction Report), NTR (Non-Profit Transaction Report)
+Employee duties: Identify suspicious behavior, escalate internally, maintain confidentiality, avoid tipping off clients
+
+FATCA: Foreign Account Tax Compliance Act for identifying US tax persons.
+CRS: Common Reporting Standard for global tax transparency.
+Operational checks: Tax residency, TIN availability, self-certification validity
+Common errors: Missing tax residency, invalid TIN, incomplete declarations
+
+DATA GOVERNANCE:
+Data Classification: Public (brochures), Internal (SOPs), Confidential (client KYC), Restricted (financial records)
+Security Controls: Password protection, access restriction, encryption, audit trails
+Do's: Use official email, lock systems, verify recipient before sending docs
+Don'ts: Share PAN over unsecured channels, use personal devices without approval, download client data unnecessarily
+
+RISK TYPES: Operational (processing failure), Compliance (regulatory breach), Cyber (data compromise), Reputational (client complaints)
+KRIs: Pending KYC cases, failed transactions, AML alerts, investor complaints
+
+QA CHECKLIST: PAN verified, bank proof matched, FATCA completed, signatures verified, approval records available
+QA Error Severity: Critical (missing PAN), Major (incorrect bank details), Minor (typographical errors)
+
+AUDIT OBJECTIVES: Verify regulatory adherence, assess control effectiveness, identify operational gaps
+Common audit observations: Missing approvals, incomplete documentation, delayed escalations, improper maker-checker controls
+
+INVESTOR ONBOARDING CONTROLS:
+Mandatory docs: PAN, address proof, bank proof, FATCA declaration, signature proof
+For entities: Board resolution, UBO declaration, authorized signatory list
+Joint holder checks: Holder sequence, bank account consistency, signature verification
+
+OPERATIONAL ESCALATION MATRIX:
+- KYC mismatch → Operations
+- AML suspicion → Compliance
+- Sanctions match → Principal Officer
+- Data breach → Information Security
+
+RECORD RETENTION: KYC documents, AML records, transaction records, audit reports (as per regulatory requirements)
+
+=== DOCUMENT 3: Compliance Onboarding Manual ===
+
+APPLICABLE TO: PMS (Portfolio Management Services) and AIF (Alternative Investment Funds)
+GOAL: Regulatory compliance, operational consistency, proper investor due diligence, risk mitigation
+
+ROLES AND RESPONSIBILITIES:
+- Relationship Team: Client coordination
+- Operations: Documentation verification
+- Compliance: AML/KYC review
+- Risk Team: Risk assessment
+- Senior Management: Exception approvals
+
+INVESTOR TYPES:
+Individuals: Resident Individuals, HNIs, Senior Citizens
+Non-Individuals: Companies, LLPs, Trusts, Partnerships, Funds
+Special: NRIs, PEPs, Foreign entities, Accredited investors
+
+INDIVIDUAL ONBOARDING DOCUMENTS:
+- PAN: Mandatory
+- Address Proof (valid OVD): Required
+- Bank Proof: Mandatory
+- FATCA/CRS: Mandatory
+- Photograph: Latest
+- Signature: Clear specimen
+Accepted Address Proofs: Aadhaar, Passport, Driving License, Voter ID
+
+INDIVIDUAL VERIFICATION CHECKS:
+PAN verification, Signature match, Name consistency, Bank account match, IPV completion
+
+NON-INDIVIDUAL / ENTITY ONBOARDING:
+Mandatory docs: Incorporation Certificate, PAN, Board Resolution, Authorized Signatory List, UBO Declaration, FATCA/CRS
+Additional checks: Business activity review, ownership verification, authorized signatory validation, regulatory status verification
+
+NRI / FOREIGN INVESTOR ONBOARDING:
+Additional docs: Passport (mandatory), Visa/OCI/PIO (applicable), Overseas Address Proof (mandatory), FEMA Declaration (mandatory)
+Permitted bank accounts: NRE, NRO, FCNR
+Additional checks: Jurisdiction review, sanctions screening, tax residency verification
+
+KYC STATUS AND ACTION:
+- Validated → Proceed
+- On Hold → Clarification required
+- Rejected → Fresh KYC required
+CKYC: Verify CKYC number, document clarity, current address validity
+
+FATCA/CRS:
+FATCA: Tax residency declaration, TIN collection, self-certification
+CRS: Identify foreign tax residency, reportable jurisdictions
+Common errors: Missing TIN, incomplete declaration, signature mismatch
+
+AML CHECKS: Transaction pattern review, source verification, risk assessment, screening review
+EDD TRIGGERS: PEP status, high-risk jurisdiction, complex ownership, adverse media
+EDD DOCS: High-risk investor → Source of wealth; Offshore entity → Structure chart; Trust → Trust deed
+
+BANK ACCOUNT VERIFICATION:
+Acceptable proofs: Cancelled cheque, Bank statement, Passbook copy
+Verification points: Investor name match, account number clarity, IFSC validation
+Third-party payments: Generally prohibited
+
+UBO VERIFICATION:
+UBO = Ultimate Beneficial Owner (natural person ultimately controlling the entity)
+Requirements: Ownership percentage, control structure, identity proof, address proof
+Red flags: Layered structures, offshore ownership, nominee arrangements
+
+SANCTIONS & SCREENING:
+Requirements: Sanctions list screening, PEP screening, adverse media checks
+Sources: UN sanctions, internal watchlists, regulatory databases
+Triggers: Name match, negative news, terror financing concern
+
+RISK CATEGORIES:
+- Low: Salaried individuals
+- Medium: HNIs
+- High: PEPs / Offshore entities
+Risk factors: Geography, occupation, transaction pattern, ownership complexity
+
+DOCUMENTATION STANDARDS: Clear, legible, complete, signed, current
+Unacceptable: Expired proofs, blurred copies, unsigned forms, cropped documents
+
+OPERATIONAL WORKFLOW:
+Step 1 – Document Collection (RM/client servicing)
+Step 2 – Initial Verification (Operations checks completeness)
+Step 3 – Compliance Review (AML/KYC)
+Step 4 – Risk Categorization
+Step 5 – Approval (authorized approver validates)
+Step 6 – Account Activation
+
+ESCALATION MATRIX:
+- AML suspicion → Compliance
+- PEP identification → Principal Officer
+- Data breach → InfoSec
+- UBO ambiguity → Senior Compliance
+
+MAKER-CHECKER CONTROLS:
+Maker and checker must be independent, no self-approval, approval evidence mandatory
+
+DATA GOVERNANCE / CONFIDENTIALITY:
+Confidential info: PAN, bank details, KYC records, financial information
+Prohibited: Personal email, unauthorized downloads, sharing passwords
+
+AUDIT READINESS: KYC records, approval logs, escalation records, screening evidence required
+
+REJECTION SCENARIOS: Invalid KYC, AML concern, sanctions match, documentation deficiency
+Exception handling: Must be documented, approved, with supporting rationale
+
+ONBOARDING CHECKLISTS:
+Individual: PAN, Address proof, FATCA, Bank proof, IPV
+Non-Individual: Incorporation certificate, Board resolution, UBO declaration, Authorized signatory list
+EDD: Source of wealth, Source of funds, Adverse media, Screening evidence
+
+KEY PRINCIPLES:
+- "No Document – No Processing": Incomplete onboarding must not proceed
+- "If Unsure – Escalate": Escalate ambiguity rather than assume
+- "If Not Documented – It Is Not Done": All approvals and checks must be recorded
+
+=== DOCUMENT 4: Reference / Quick Guide ===
+
+KRA OVERVIEW:
+- Centralized KYC repository, stores investor KYC records, linked with PAN
+KYC Statuses: KYC Registered, Validated, On Hold, Rejected, Under Process
+Common issues: On Hold (IPV mismatch) → Fresh KYC; Name mismatch → Supporting declaration; Incomplete → Re-upload docs
+
+CKYC vs KRA COMPARISON:
+KRA: SEBI intermediary focused, PAN-centric
+CKYC: Cross-financial-sector, central identifier
+
+AML HANDBOOK SUMMARY:
+Governing laws: FIU-India reporting obligations, PMLA requirements
+Customer risk: Low, Medium, High
+AML controls: Screening, monitoring, reporting, periodic review
+
+EDD GUIDE:
+High-risk categories: PEPs, NRIs from high-risk jurisdictions, complex ownership, trusts, offshore entities
+EDD docs by type: Trust → Trust deed; Company → UBO declaration; NRI → Overseas address proof
+Practical checklist: Source of Wealth, Source of Funds, Adverse media screening, Sanctions screening
+
+FIU REFERENCE:
+Types: STR, CTR, NTR
+Staff must NOT tip off clients, follow internal escalation workflow
+
+DATA GOVERNANCE AREAS:
+Data quality, security, accessibility, retention
+Key controls: Access management, encryption, audit trails, backup policy
+No WhatsApp for PAN, no personal email, password controls required
+
+RISK MANAGEMENT:
+Types: Operational, Compliance, Reputational, Cyber
+KRIs: Pending KYC, failed transactions, investor complaints, AML alerts
+
+QA AREAS:
+Onboarding QA: PAN verified, FATCA complete, IPV done, bank proof matched
+Transaction QA: Signature match, approval evidence, maker-checker followed
+Error severity: Missing PAN (Critical), Typo (Minor)
+
+AUDIT READINESS:
+Checklist: SOP availability, approval records, investor communication logs, exception register
+Compliance calendar: AML review (quarterly), investor reporting (periodic), KYC review (ongoing)
+Common audit observations: Incomplete docs, delayed approvals, missing maker-checker evidence
+CAPA: Corrective and Preventive Action tracker
+
+=== DOCUMENT 5: Operations FAQ Document ===
+
+KYC & KRA FAQs:
+Q: What is KYC? A: Process of verifying identity and address of investor before onboarding.
+Q: What is KRA? A: KYC Registration Agency maintains centralized KYC records.
+Q: Can investment proceed if KYC is On Hold? A: No. Only after KYC validation.
+Q: What causes KYC On Hold? A: PAN mismatch, signature mismatch, invalid proof, blurred documents, IPV mismatch.
+Q: Is PAN mandatory? A: Yes, except where regulatory exemptions apply.
+Q: Is IPV mandatory? A: Yes, In-Person Verification is mandatory wherever applicable.
+Q: Investor name differs in PAN and bank proof? A: Obtain gazette notification, marriage certificate, declaration, or updated proof.
+
+CKYC FAQs:
+Q: What is CKYC number? A: 14-digit identifier after successful CKYC registration.
+Q: Is CKYC enough for onboarding? A: Depends on internal policy; additional documentation may be required.
+Q: What if CKYC records are blurry? A: Obtain fresh KYC documents.
+Q: Can old CKYC records be accepted? A: Subject to validity checks, current address confirmation, regulatory norms.
+
+FATCA & CRS FAQs:
+Q: Is FATCA mandatory? A: Generally yes, wherever applicable.
+Q: What if FATCA declaration is incomplete? A: Onboarding should not proceed.
+Q: Common FATCA errors? A: Missing country of tax residence, invalid TIN, missing signatures.
+
+AML & EDD FAQs:
+Q: What is a suspicious transaction? A: Transaction that appears unusual, inconsistent, or lacks economic rationale.
+Q: Should employees inform clients if STR is filed? A: No. Tipping off is prohibited.
+Q: What to do if suspicious activity noticed? A: Immediately escalate to Compliance or Principal Officer.
+Q: Who are high-risk clients? A: PEPs, offshore entities, trusts, investors from high-risk jurisdictions.
+
+INVESTOR ONBOARDING FAQs:
+Q: Mandatory docs for individuals? A: PAN, address proof, bank proof, FATCA declaration, signature proof.
+Q: Additional docs for entities? A: Certificate of incorporation, board resolution, UBO declaration, authorized signatory list.
+Q: Can onboarding proceed with expired documents? A: No.
+Q: What if signatures mismatch? A: Obtain fresh signatures and supporting verification.
+
+BANK ACCOUNT FAQs:
+Q: Acceptable bank proofs? A: Cancelled cheque, bank statement, bank passbook copy.
+Q: Can investment come from third-party account? A: Generally not permitted.
+Q: What if investor name differs in bank proof? A: Obtain additional supporting documents.
+
+JOINT HOLDER FAQs:
+Q: Can investment be made jointly? A: Yes, subject to product and policy guidelines.
+Q: Should bank account holder sequence match? A: Preferably yes.
+Q: Can one holder sign for another? A: Only if valid PoA exists.
+
+NRI INVESTOR FAQs:
+Q: Can NRIs invest in PMS/AIF? A: Yes, subject to FEMA and internal compliance requirements.
+Q: Additional documents for NRIs? A: Passport, Visa/OCI/PIO, overseas address proof, FEMA declarations.
+Q: Which bank accounts can NRIs use? A: NRE, NRO, FCNR (subject to regulations).
+Q: Is apostille/notarization required? A: Depends on jurisdiction and internal policy.
+
+NOMINEE & TRANSMISSION FAQs:
+Q: What is transmission? A: Transfer of holdings due to death of investor.
+Q: Documents for transmission? A: Death certificate, KYC of claimant, indemnity/affidavit if applicable.
+Q: Can nominee become legal owner automatically? A: Subject to legal and regulatory provisions.
+
+TRANSACTION PROCESSING FAQs:
+Q: What is maker-checker? A: Dual verification where one person initiates and another approves.
+Q: Can transactions be processed without approval? A: No.
+Q: What to do in case of operational error? A: Report immediately, escalate, record corrective action.
+Q: What is TAT? A: Turnaround Time for processing activities.
+
+AUDIT & COMPLIANCE FAQs:
+Q: Purpose of audit? A: Assess compliance, operational controls, and risk management.
+Q: Common audit observations? A: Missing approvals, incomplete records, delayed escalations, policy deviations.
+Q: What is CAPA? A: Corrective and Preventive Action plan.
+Q: Why is documentation important? A: "If not documented, it is treated as not done."
+
+SEBI SCORES FAQs:
+Q: What is SCORES? A: SEBI Complaint Redress System.
+Q: Complaint handling principles? A: Timely response, proper documentation, root cause analysis, closure evidence.
+
+OPERATIONAL ESCALATION FAQs:
+Q: When to involve Compliance? A: AML alerts, sanctions matches, regulatory breaches, suspicious activity.
+Q: When to involve Legal? A: Litigation, court orders, complex contractual matters.
+Q: Policy ambiguity? A: Escalate before processing.
+
+DATA GOVERNANCE FAQs:
+Q: Can client docs be shared over WhatsApp? A: Not unless permitted under approved policy.
+Q: Can personal email IDs be used? A: No.
+Q: What if data leakage suspected? A: Immediately escalate to Information Security and Compliance.
+
+REGULATORY REPORTING FAQs:
+Q: What if reporting is delayed? A: Potential regulatory observations, penalties, reputational impact.
+
+GENERAL OPERATIONS FAQs:
+Q: Why are SOPs important? A: Standardize operations and reduce errors.
+Q: What is operational risk? A: Risk from failed processes, systems, or human error.
+Q: Why is maker-checker important? A: To reduce fraud and operational errors.
+
+=== END OF KNOWLEDGE BASE ===
+
+INSTRUCTIONS FOR RESPONDING:
+1. Always answer based on the knowledge base above.
+2. Be precise and cite the relevant document section when helpful.
+3. Use structured formatting (bullet points, numbered lists, tables described in text) when appropriate.
+4. If a question is outside the scope of the documents, say so clearly.
+5. For ambiguous questions, answer based on the most relevant section.
+6. Do not make up information not in the documents.
+`;
+
+// ─── State ───────────────────────────────────────────────────────────────────
+let apiKey = localStorage.getItem('groq_api_key') || '';
+let selectedModel = localStorage.getItem('groq_model') || 'llama-3.3-70b-versatile';
+let conversationHistory = [];
+let isLoading = false;
+
+// ─── DOM refs ────────────────────────────────────────────────────────────────
+const chatArea = document.getElementById('chatArea');
+const messagesContainer = document.getElementById('messagesContainer');
+const userInput = document.getElementById('userInput');
+const sendBtn = document.getElementById('sendBtn');
+const statusDot = document.getElementById('statusDot');
+const statusLabel = document.getElementById('statusLabel');
+const modelTag = document.getElementById('modelTag');
+const modalOverlay = document.getElementById('modalOverlay');
+const apiKeyInput = document.getElementById('apiKeyInput');
+const modelSelect = document.getElementById('modelSelect');
+
+// ─── Init ─────────────────────────────────────────────────────────────────────
+function init() {
+  updateStatus();
+  userInput.addEventListener('input', handleInputChange);
+  userInput.addEventListener('keydown', handleKeyDown);
+  document.getElementById('configBtn').addEventListener('click', openModal);
+  document.getElementById('modalSaveBtn').addEventListener('click', saveConfig);
+  document.getElementById('modalCancelBtn').addEventListener('click', closeModal);
+  modalOverlay.addEventListener('click', (e) => { if (e.target === modalOverlay) closeModal(); });
+}
+
+function updateStatus() {
+  if (apiKey) {
+    statusDot.classList.add('connected');
+    statusLabel.textContent = 'Connected — Ready';
+    sendBtn.disabled = false;
+    modelTag.textContent = 'Model: ' + selectedModel.split('-').slice(0,3).join('-');
+  } else {
+    statusDot.classList.remove('connected');
+    statusLabel.textContent = 'No API key — click API Settings';
+    sendBtn.disabled = true;
+    modelTag.textContent = 'Model: —';
+  }
+}
+
+// ─── Modal ────────────────────────────────────────────────────────────────────
+function openModal() {
+  apiKeyInput.value = apiKey;
+  modelSelect.value = selectedModel;
+  modalOverlay.classList.add('open');
+  setTimeout(() => apiKeyInput.focus(), 100);
+}
+
+function closeModal() {
+  modalOverlay.classList.remove('open');
+}
+
+function saveConfig() {
+  const key = apiKeyInput.value.trim();
+  const model = modelSelect.value;
+  if (!key) { apiKeyInput.style.borderColor = 'var(--danger)'; return; }
+  apiKey = key;
+  selectedModel = model;
+  localStorage.setItem('groq_api_key', key);
+  localStorage.setItem('groq_model', model);
+  closeModal();
+  updateStatus();
+}
+
+// ─── Input handling ───────────────────────────────────────────────────────────
+function handleInputChange() {
+  this.style.height = 'auto';
+  this.style.height = Math.min(this.scrollHeight, 140) + 'px';
+}
+
+function handleKeyDown(e) {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    if (!sendBtn.disabled && !isLoading) sendMessage();
+  }
+}
+
+sendBtn.addEventListener('click', () => { if (!isLoading) sendMessage(); });
+
+// ─── Message rendering ────────────────────────────────────────────────────────
+function hideWelcome() {
+  const welcome = document.getElementById('welcomeScreen');
+  if (welcome) welcome.remove();
+}
+
+function appendMessage(role, content) {
+  hideWelcome();
+  const wrapper = document.createElement('div');
+  wrapper.className = 'message ' + role;
+
+  const avatar = document.createElement('div');
+  avatar.className = 'avatar';
+  avatar.textContent = role === 'user' ? 'U' : '⚖';
+
+  const bubble = document.createElement('div');
+  bubble.className = 'bubble';
+
+  const meta = document.createElement('div');
+  meta.className = 'bubble-meta';
+  meta.textContent = role === 'user' ? 'You' : 'Compliance Assistant';
+  bubble.appendChild(meta);
+
+  const contentDiv = document.createElement('div');
+  contentDiv.className = 'bubble-content';
+  contentDiv.innerHTML = formatMessage(content);
+  bubble.appendChild(contentDiv);
+
+  wrapper.appendChild(avatar);
+  wrapper.appendChild(bubble);
+  messagesContainer.appendChild(wrapper);
+  scrollToBottom();
+  return contentDiv;
+}
+
+function formatMessage(text) {
+  // Convert markdown-ish formatting to HTML
+  return text
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\*(.+?)\*/g, '<em>$1</em>')
+    .replace(/`(.+?)`/g, '<code>$1</code>')
+    .replace(/^### (.+)$/gm, '<strong style="font-size:13px;color:var(--accent2);text-transform:uppercase;letter-spacing:0.06em">$1</strong>')
+    .replace(/^## (.+)$/gm, '<strong style="font-size:14px;color:var(--accent)">$1</strong>')
+    .replace(/^# (.+)$/gm, '<strong style="font-size:15px;color:var(--accent)">$1</strong>')
+    .replace(/^[-•]\s+(.+)$/gm, '<li>$1</li>')
+    .replace(/(<li>.*<\/li>)/gs, '<ul>$1</ul>')
+    .replace(/^\d+\.\s+(.+)$/gm, '<li>$1</li>')
+    .replace(/\n\n/g, '</p><p>')
+    .replace(/\n/g, '<br>')
+    .replace(/^(.+)$/, '<p>$1</p>');
+}
+
+function appendTyping() {
+  hideWelcome();
+  const wrapper = document.createElement('div');
+  wrapper.className = 'message bot';
+  wrapper.id = 'typingMsg';
+
+  const avatar = document.createElement('div');
+  avatar.className = 'avatar';
+  avatar.textContent = '⚖';
+
+  const bubble = document.createElement('div');
+  bubble.className = 'bubble';
+
+  const meta = document.createElement('div');
+  meta.className = 'bubble-meta';
+  meta.textContent = 'Compliance Assistant';
+
+  const typing = document.createElement('div');
+  typing.className = 'typing-indicator';
+  typing.innerHTML = '<div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div>';
+
+  bubble.appendChild(meta);
+  bubble.appendChild(typing);
+  wrapper.appendChild(avatar);
+  wrapper.appendChild(bubble);
+  messagesContainer.appendChild(wrapper);
+  scrollToBottom();
+}
+
+function removeTyping() {
+  const el = document.getElementById('typingMsg');
+  if (el) el.remove();
+}
+
+function appendError(msg) {
+  const wrapper = document.createElement('div');
+  wrapper.className = 'message bot';
+  const avatar = document.createElement('div');
+  avatar.className = 'avatar';
+  avatar.textContent = '⚖';
+  const div = document.createElement('div');
+  div.className = 'error-bubble';
+  div.innerHTML = '<span>⚠️</span><span>' + msg + '</span>';
+  wrapper.appendChild(avatar);
+  wrapper.appendChild(div);
+  messagesContainer.appendChild(wrapper);
+  scrollToBottom();
+}
+
+function scrollToBottom() {
+  chatArea.scrollTo({ top: chatArea.scrollHeight, behavior: 'smooth' });
+}
+
+// ─── Send message ─────────────────────────────────────────────────────────────
+async function sendMessage() {
+  const text = userInput.value.trim();
+  if (!text || isLoading) return;
+  if (!apiKey) { openModal(); return; }
+
+  isLoading = true;
+  sendBtn.disabled = true;
+  userInput.value = '';
+  userInput.style.height = 'auto';
+
+  appendMessage('user', text);
+  conversationHistory.push({ role: 'user', content: text });
+
+  appendTyping();
+
+  try {
+    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + apiKey
+      },
+      body: JSON.stringify({
+        model: selectedModel,
+        max_tokens: 1500,
+        temperature: 0.3,
+        messages: [
+          { role: 'system', content: KNOWLEDGE_BASE },
+          ...conversationHistory
+        ]
+      })
+    });
+
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({}));
+      throw new Error(err.error?.message || 'API error: ' + response.status);
+    }
+
+    const data = await response.json();
+    const reply = data.choices?.[0]?.message?.content || 'No response received.';
+
+    removeTyping();
+    appendMessage('bot', reply);
+    conversationHistory.push({ role: 'assistant', content: reply });
+
+    // Keep history manageable
+    if (conversationHistory.length > 20) {
+      conversationHistory = conversationHistory.slice(-20);
+    }
+
+  } catch (err) {
+    removeTyping();
+    let msg = err.message;
+    if (msg.includes('401') || msg.includes('invalid_api_key')) {
+      msg = 'Invalid API key. Please check your Groq API key in settings.';
+    } else if (msg.includes('network') || msg.includes('fetch')) {
+      msg = 'Network error. Check your internet connection.';
+    }
+    appendError(msg);
+  } finally {
+    isLoading = false;
+    if (apiKey) sendBtn.disabled = false;
+    userInput.focus();
+  }
+}
+
+function sendChip(el) {
+  userInput.value = el.textContent;
+  sendMessage();
+}
+
+function clearChat() {
+  conversationHistory = [];
+  messagesContainer.innerHTML = `
+    <div class="welcome" id="welcomeScreen">
+      <div class="welcome-icon">📋</div>
+      <h2>Ask me anything about<br>compliance & operations</h2>
+      <p>I have full knowledge of your 5 uploaded documents covering AML red flags, KYC/CKYC, investor onboarding, FATCA/CRS, EDD, audit readiness, and operations FAQs.</p>
+      <div class="welcome-chips">
+        <div class="chip" onclick="sendChip(this)">What are the AML red flags for high-risk clients?</div>
+        <div class="chip" onclick="sendChip(this)">What documents are needed to onboard an NRI investor?</div>
+        <div class="chip" onclick="sendChip(this)">Can investment proceed if KYC is On Hold?</div>
+        <div class="chip" onclick="sendChip(this)">What is the escalation process for suspicious transactions?</div>
+        <div class="chip" onclick="sendChip(this)">Explain EDD requirements and when they apply</div>
+        <div class="chip" onclick="sendChip(this)">What are maker-checker controls?</div>
+        <div class="chip" onclick="sendChip(this)">What are the FATCA common errors to avoid?</div>
+        <div class="chip" onclick="sendChip(this)">List documents required for entity onboarding</div>
+      </div>
+    </div>`;
+}
+
+init();
+</script>
+</body>
+</html>
