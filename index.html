@@ -1,0 +1,846 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>PrimeInvestor PMS Assistant</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --navy: #0d1b2a;
+    --navy2: #132235;
+    --teal: #1a9db5;
+    --teal-light: #22c0dc;
+    --gold: #c9a84c;
+    --gold-light: #e2c37a;
+    --off-white: #f0f4f8;
+    --text: #e8edf2;
+    --text-muted: #8fa3b5;
+    --card: #172840;
+    --card2: #1e3350;
+    --border: rgba(26,157,181,0.18);
+    --radius: 14px;
+    --shadow: 0 8px 40px rgba(0,0,0,0.35);
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--navy);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  /* Background mesh */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 60% 50% at 10% 20%, rgba(26,157,181,0.12) 0%, transparent 60%),
+      radial-gradient(ellipse 50% 40% at 90% 80%, rgba(201,168,76,0.08) 0%, transparent 55%),
+      radial-gradient(ellipse 40% 60% at 50% 100%, rgba(13,27,42,0.9) 0%, transparent 70%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* ── Header ── */
+  header {
+    position: relative;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 18px 28px;
+    background: rgba(19,34,53,0.85);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+
+  .logo-mark {
+    width: 42px; height: 42px;
+    background: linear-gradient(135deg, var(--teal), var(--teal-light));
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Playfair Display', serif;
+    font-size: 18px; font-weight: 700;
+    color: #fff;
+    flex-shrink: 0;
+    box-shadow: 0 0 0 1px rgba(255,255,255,0.1), 0 4px 14px rgba(26,157,181,0.3);
+  }
+
+  .header-text h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: 17px; font-weight: 600;
+    color: var(--off-white);
+    letter-spacing: 0.01em;
+  }
+
+  .header-text p {
+    font-size: 12px; color: var(--text-muted); margin-top: 1px;
+  }
+
+  .api-badge {
+    margin-left: auto;
+    display: flex; align-items: center; gap: 8px;
+  }
+
+  #apiKeyInput {
+    background: var(--card2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 7px 12px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    color: var(--text);
+    width: 240px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  #apiKeyInput:focus { border-color: var(--teal); }
+  #apiKeyInput::placeholder { color: var(--text-muted); }
+
+  .save-btn {
+    background: var(--teal);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 7px 14px;
+    font-size: 13px; font-weight: 500;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.1s;
+    white-space: nowrap;
+  }
+  .save-btn:hover { background: var(--teal-light); }
+  .save-btn:active { transform: scale(0.97); }
+
+  /* ── Main layout ── */
+  .main {
+    position: relative;
+    z-index: 1;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    max-width: 860px;
+    width: 100%;
+    margin: 0 auto;
+    padding: 0 20px 20px;
+    overflow: hidden;
+  }
+
+  /* ── Suggestion chips ── */
+  .suggestions {
+    padding: 18px 0 10px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+
+  .suggestions p {
+    width: 100%;
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-bottom: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+  }
+
+  .chip {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 7px 14px;
+    font-size: 13px; color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+  }
+  .chip:hover {
+    border-color: var(--teal);
+    color: var(--teal-light);
+    background: rgba(26,157,181,0.08);
+  }
+
+  /* ── Chat messages ── */
+  #chatWindow {
+    flex: 1;
+    overflow-y: auto;
+    padding: 8px 0 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    scroll-behavior: smooth;
+  }
+
+  #chatWindow::-webkit-scrollbar { width: 4px; }
+  #chatWindow::-webkit-scrollbar-track { background: transparent; }
+  #chatWindow::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+  .msg {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+    animation: fadeUp 0.3s ease both;
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(10px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .msg.user { flex-direction: row-reverse; }
+
+  .avatar {
+    width: 34px; height: 34px; border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 15px; flex-shrink: 0;
+    font-weight: 600;
+  }
+
+  .msg.bot .avatar {
+    background: linear-gradient(135deg, var(--teal), var(--teal-light));
+    color: #fff; font-family: 'Playfair Display', serif;
+    box-shadow: 0 0 0 1px rgba(255,255,255,0.08), 0 4px 12px rgba(26,157,181,0.25);
+  }
+
+  .msg.user .avatar {
+    background: linear-gradient(135deg, var(--gold), var(--gold-light));
+    color: var(--navy); font-family: 'DM Sans', sans-serif;
+  }
+
+  .bubble {
+    max-width: 78%;
+    padding: 13px 16px;
+    border-radius: var(--radius);
+    font-size: 14.5px; line-height: 1.65;
+  }
+
+  .msg.bot .bubble {
+    background: var(--card);
+    border: 1px solid var(--border);
+    color: var(--text);
+    border-top-left-radius: 4px;
+  }
+
+  .msg.user .bubble {
+    background: linear-gradient(135deg, rgba(26,157,181,0.22), rgba(26,157,181,0.12));
+    border: 1px solid rgba(26,157,181,0.25);
+    color: var(--off-white);
+    border-top-right-radius: 4px;
+    text-align: right;
+  }
+
+  /* Typing indicator */
+  .typing-indicator {
+    display: flex; gap: 5px; align-items: center; padding: 4px 2px;
+  }
+
+  .typing-indicator span {
+    width: 7px; height: 7px;
+    background: var(--teal);
+    border-radius: 50%;
+    animation: bounce 1.2s infinite ease-in-out;
+  }
+  .typing-indicator span:nth-child(2) { animation-delay: 0.2s; }
+  .typing-indicator span:nth-child(3) { animation-delay: 0.4s; }
+
+  @keyframes bounce {
+    0%, 80%, 100% { transform: translateY(0); opacity: 0.4; }
+    40%           { transform: translateY(-6px); opacity: 1; }
+  }
+
+  /* ── Input area ── */
+  .input-bar {
+    flex-shrink: 0;
+    display: flex;
+    gap: 10px;
+    padding: 14px 16px;
+    background: rgba(19,34,53,0.7);
+    backdrop-filter: blur(10px);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+  }
+
+  #userInput {
+    flex: 1;
+    background: transparent;
+    border: none;
+    outline: none;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14.5px;
+    color: var(--text);
+    resize: none;
+    min-height: 22px; max-height: 120px;
+    line-height: 1.5;
+  }
+
+  #userInput::placeholder { color: var(--text-muted); }
+
+  .send-btn {
+    background: linear-gradient(135deg, var(--teal), var(--teal-light));
+    border: none; border-radius: 10px;
+    width: 40px; height: 40px;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: opacity 0.2s, transform 0.1s;
+    box-shadow: 0 4px 12px rgba(26,157,181,0.3);
+    align-self: flex-end;
+  }
+
+  .send-btn:hover { opacity: 0.9; }
+  .send-btn:active { transform: scale(0.95); }
+  .send-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  .send-btn svg { width: 18px; height: 18px; fill: #fff; }
+
+  .disclaimer {
+    text-align: center;
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-top: 10px;
+    padding-bottom: 4px;
+  }
+
+  /* Welcome card */
+  .welcome-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 24px;
+    text-align: center;
+    margin: 10px 0;
+  }
+
+  .welcome-card .icon {
+    font-size: 36px; margin-bottom: 12px;
+  }
+
+  .welcome-card h2 {
+    font-family: 'Playfair Display', serif;
+    font-size: 20px; font-weight: 600;
+    color: var(--off-white);
+    margin-bottom: 8px;
+  }
+
+  .welcome-card p {
+    font-size: 13.5px;
+    color: var(--text-muted);
+    line-height: 1.6;
+    max-width: 480px;
+    margin: 0 auto;
+  }
+
+  /* Responsive */
+  @media (max-width: 600px) {
+    header { flex-wrap: wrap; padding: 14px 16px; }
+    .api-badge { width: 100%; margin-left: 0; }
+    #apiKeyInput { flex: 1; width: auto; }
+    .main { padding: 0 12px 12px; }
+    .bubble { max-width: 88%; font-size: 14px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ── Header ── -->
+<header>
+  <div class="logo-mark">PI</div>
+  <div class="header-text">
+    <h1>PrimeInvestor PMS Assistant</h1>
+    <p>Ask anything about Prime Vision, Synergy &amp; Velocity</p>
+  </div>
+  <div class="api-badge">
+    <input type="password" id="apiKeyInput" placeholder="Enter your Groq API key…" autocomplete="off" />
+    <button class="save-btn" onclick="saveKey()">Save</button>
+  </div>
+</header>
+
+<!-- ── Main ── -->
+<div class="main">
+
+  <!-- Suggestion chips -->
+  <div class="suggestions" id="suggestions">
+    <p>Try asking…</p>
+    <div class="chip" onclick="ask(this)">What is Prime Vision?</div>
+    <div class="chip" onclick="ask(this)">Compare all three PMS strategies</div>
+    <div class="chip" onclick="ask(this)">What are the fees for each strategy?</div>
+    <div class="chip" onclick="ask(this)">Who should invest in Prime Velocity?</div>
+    <div class="chip" onclick="ask(this)">What is the minimum investment?</div>
+    <div class="chip" onclick="ask(this)">How does Prime Synergy handle market downturns?</div>
+  </div>
+
+  <!-- Chat window -->
+  <div id="chatWindow">
+    <div class="welcome-card">
+      <div class="icon">📊</div>
+      <h2>Your PMS Knowledge Assistant</h2>
+      <p>I have full knowledge of PrimeInvestor's three Portfolio Management Services — <strong>Prime Vision</strong>, <strong>Prime Synergy</strong>, and <strong>Prime Velocity</strong>. Ask me anything about strategies, fees, suitability, or how to get started.</p>
+    </div>
+  </div>
+
+  <!-- Input bar -->
+  <div class="input-bar">
+    <textarea id="userInput" rows="1" placeholder="Ask about PMS strategies, fees, suitability…" onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
+    <button class="send-btn" id="sendBtn" onclick="sendMessage()" title="Send">
+      <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
+      </svg>
+    </button>
+  </div>
+  <div class="disclaimer">
+    PrimeInvestor Financial Research Pvt. Ltd. — SEBI Registered Portfolio Manager (INP000009658).
+    This chatbot is for informational purposes only and does not constitute financial advice.
+  </div>
+
+</div>
+
+<script>
+// ────────────────────────────────────────────────────
+// EMBEDDED DOCUMENT CONTEXT
+// ────────────────────────────────────────────────────
+const CONTEXT = `
+You are a knowledgeable assistant for PrimeInvestor Financial Research Private Limited, a SEBI-registered Portfolio Manager (Reg. No. INP000009658). You answer questions based strictly on the following information about their three Portfolio Management Services (PMS). Be helpful, clear, and professional. If a question falls outside this knowledge, say so politely.
+
+=== COMPANY OVERVIEW ===
+PrimeInvestor Financial Research Private Limited started in January 2020 as a SEBI-registered Research Analyst firm providing investment recommendations and DIY tools across MFs, Stocks, ETFs, NPS, Bonds and Insurance.
+- 50,000+ users trusting the platform over 6 years
+- Track record of consistent market-beating performance
+- Rs 11,000+ crore portfolios reviewed and guided
+- Industry-leading ratings for mutual funds, stocks, and ETFs
+
+Team (Nearly 7 Decades Combined Experience):
+- Vidya Bala (Principal Officer): 20+ years, built India's first robo-advisory, managed hundreds of portfolios
+- Aarati Krishnan (Head of Advisory): 30+ years, led portfolio division of premier business newspaper, multi-cycle expertise
+- Bhavana Acharya (Fund Manager): 16+ years, expert in risk-adjusted returns, strategic portfolio construction
+
+Investment Philosophy:
+1. Asset Allocation Drives Returns — asset allocation matters as much as, if not more than, fund or stock selection
+2. Downside Protection is Wealth Creation — containing losses is key; a portfolio that falls 50% needs 100% gain to recover
+3. Active Management, Not Passive Holding — "buy and hold" doesn't mean "buy and forget"
+4. Active Lookout for Opportunities — actively track holdings and revisit thesis when fundamentals change
+
+Our Commitment:
+- Cost-Effective Excellence: pricing leaves more wealth on client's table
+- Alpha With Protection: risk-adjusted returns you can keep
+- Transparent Communication: clients understand what we do and why
+- Disciplined Process: evidence-based strategies that remove behavioral biases
+- Aligned Interests: no profit-sharing; client success is our success
+
+How Prime PMS differs from Traditional PMS:
+- Traditional PMS: high risk, focused only on stocks, single asset class, only for high-risk allocations
+- Prime PMS: options across risk profiles, multi-product (MFs, stocks, ETFs, bonds), diversified across equity/debt/gold, serves as a holistic wealth solution
+
+Minimum Investment: Rs 50 lakh per PAN (can be deployed across multiple strategies)
+Exit Load: 1% on withdrawal within first year, 0.5% on withdrawal within two years (all strategies)
+
+How It Works (5 Steps):
+1. Profile Assessment: evaluate timeline, risk capacity, goals, experience
+2. Strategy Recommendation: recommend most suitable strategy or combination
+3. Portfolio Construction: implement with appropriate allocation; deploy in Liquid strategy with zero fee then shift to chosen strategy in phased manner based on market conditions
+4. Ongoing Management: regular monitoring, rebalancing, strategic adjustments
+5. Transparent Reporting: clear reporting on performance, changes, rationale
+
+Contact: contact@primeinvestor.in
+Address: Third Floor, Sudha Centre, 31, Dr Radha Krishnan Salai, Mylapore, Chennai, Tamil Nadu 600004
+
+=== STRATEGY 1: PRIME VISION ===
+Tagline: Expertly curated MF portfolio with disciplined asset allocation to meet your goals
+Type: Mutual fund and ETF-based PMS
+Investment: Direct Mutual Funds only (no stocks)
+Risk: Moderate to Very High (depending on variant)
+Horizon: 3 to 7+ years
+Complexity: Simple
+Style: Strategic Allocation
+Differentiator: Timeline-based calibration
+Management Fee: 0.75% per annum (no performance fee)
+Benchmark: Nifty 50 Hybrid Composite Debt 50:50 Index
+
+Overview:
+Prime Vision is an expertly curated portfolio of mutual funds to meet 3 to 7+ year wealth goals through disciplined asset allocation. Uses direct mutual fund schemes for exposure to equities, debt, and gold. Offers three different asset allocation choices to suit timeline and risk preference. Targets alpha through timely positions in thematic mutual funds/ETFs on top of a core layer of diversified funds selected for outperformance.
+
+Why Prime Vision (Problems found in 3600+ investor portfolios worth Rs 11,000+ crore):
+- Skewed allocation: either equity-heavy or debt-heavy with no steady-state asset allocation
+- Skipped rebalancing: investors skip rebalancing on time, leading to high concentration in top 2-3 funds
+- Diworsification: owning 30-50 funds leads to duplication and watered-down returns
+- Regular Plan penalty: investors still own Regular plans, sacrificing 0.75-1.25% annually to commissions
+
+Prime Vision Solutions:
+- Curated portfolio of 8-15 funds, managed by experts in MF selection
+- Scientific asset allocation to equity, debt, gold, and hybrid funds based on time-tested data
+- Active rebalancing from overvalued to undervalued assets, removing emotions from investing
+- Strategic position-sizing to avoid concentration
+- Available in three risk variants: Balanced, Growth, and Ultra
+- Invests only through Direct plans with a separate management fee (conflict-free)
+- Lower than cost of regular plan MFs
+
+Equity Strategy:
+- Core Holdings: Large-cap, flexicap, value, contra, and index funds — stable foundation, varying from 60% to 80% allocation as timeline extends. Low-churn, consistent equity returns, aims to outperform bellwether indices.
+- Growth Component: Mid and small-cap funds at 15-20% of equity allocation across all three variants
+- Opportunity Layer: Thematic, sector, and international funds at 15%-30% of equity allocation based on timeline; timely entry and exit
+
+THREE PORTFOLIO VARIANTS:
+
+A) PRIME BALANCED PORTFOLIO (3-5 Year Timeline)
+Goal: Steady returns with capital preservation
+Allocation: Equity 60%, Debt/Hybrids 30%, Gold 10%
+Key Features:
+- Equity at 60% to beat inflation but limit volatility
+- Higher debt allocation provides stability
+- Hybrid funds for tax efficiency with downside protection
+- Gold to diversify and hedge against equity volatility
+
+B) PRIME GROWTH PORTFOLIO (5-7 Year Timeline)
+Goal: Growth with moderate protection
+Allocation: Equity 70%, Debt/Hybrids 20%, Gold 10%
+Key Features:
+- Equity at 70% — time to ride market cycles
+- Debt at lower 20% — can tolerate short-term volatility
+- Hybrids for tax efficiency with downside protection
+- Gold to diversify and hedge against equity volatility
+
+C) PRIME ULTRA PORTFOLIO (7+ Year Timeline)
+Goal: Maximum wealth creation with a hedge
+Allocation: Equity 80%, Debt/Hybrids 10%, Gold 10%
+Key Features:
+- Maximum equity exposure of 80% to capture long-term wealth creation
+- Minimal debt since long timeline allows recovery from falls
+- Hybrids for tax efficiency with downside protection
+- Gold to diversify and hedge against equity volatility
+
+Suitability (Who Should Invest in Prime Vision):
+- Clients looking to move from self-managed to professionally managed mutual fund portfolio
+- First-time investors in Equity or PMS
+- Clients looking to benefit from thematic funds and ETFs
+- Clients looking to preserve equity gains made in the last 3 to 5 years
+- Clients looking to meet 3 to 7-year plus wealth goals
+- Clients looking to diversify from 100% equity to a balanced portfolio with debt and gold
+
+=== STRATEGY 2: PRIME SYNERGY ===
+Tagline: An intelligent combination of stocks and mutual funds, with three distinct sources of alpha
+Type: Dynamic MF + Stock Blend
+Investment: Direct Mutual Funds + Direct Stocks
+Risk: Moderate to High
+Horizon: 5 to 7+ years
+Complexity: Moderate
+Style: Tactical Allocation
+Differentiator: Market-responsive
+Management Fee: 1.15% per annum (no performance fee)
+Benchmark: Nifty 50 Hybrid Composite Debt 50:50 Index
+
+Overview:
+PRIME SYNERGY is a structured portfolio with equity allocation varying between 70% and 100%, divided between equity mutual funds and stocks (avoiding overlaps). Has leeway to allocate up to 30% to debt funds, gold, and alternatives such as REITs and InvITs for defensive considerations. Dynamically changes both the stock-mutual fund mix and the equity-debt mix to make the most of market opportunities.
+
+Problems It Solves (for investors who own both MFs and stocks):
+1. They buy stocks or MFs without a plan (when they have money/time/inclination)
+2. They make bullish bets in rising markets but postpone decisions in falling/sideways markets
+3. They have significant overlaps between stock and MF holdings
+4. They run SIPs or invest lumpsums in popular funds but don't have time to monitor performance
+5. They end up with equity-heavy portfolios with no allocation to debt, gold, or alternatives like REITs/InvITs
+6. They worry about market valuation but lack information to act
+
+Prime Synergy Features (Dual Lever Approach):
+- Winning combo: curated combination of outperforming MFs + alpha-generating stocks picked by expert team
+- Dual levers: varies both equity allocation AND stock-MF mix based on market outlook
+- Tactical positioning: varies equity allocation between 70% and 100% to navigate frothy markets
+- No overlap: minimises overlaps between MF and stock holdings; owns stocks ignored by MF managers
+- Participation: participates in return opportunities across debt, gold, and alternatives (REITs, InvITs)
+- Tax-efficient downside protection
+
+Portfolio Strategy (Three Sources of Alpha):
+1. Equity Mutual Funds: buy and hold outperforming equity mutual funds. Diversified categories (flexicap, contra, value) make up stable foundation. One or two thematic funds added tactically for a return kicker.
+2. Direct Stocks: high-growth stocks curated for uniqueness and minimum overlap with MFs owned.
+3. Tactical Asset Allocation (Dual Levers): In risky markets → higher MF allocation relative to direct stocks + max out 30% allocation to debt, gold, alternatives. In attractive valuations → ramp up equity allocation and direct stock exposures.
+
+Suitability (Who Should Invest in Prime Synergy):
+- Investors comfortable with moderate to high risks, minimum 5-year timeline
+- First-time or time-constrained investors looking for professionally managed equity portfolio
+- Investors owning both stocks and MFs without any structure
+- Investors looking to build long-term wealth for self or family
+- Investors looking to add stocks to a MF-only portfolio or vice versa
+- Investors saddled with an underperforming MF or stock portfolio, seeking higher returns
+
+=== STRATEGY 3: PRIME VELOCITY ===
+Tagline: A pure equity portfolio to create lasting wealth through compounding
+Type: Pure Equity Compounding Strategy
+Investment: Direct Stocks only
+Risk: Very High
+Horizon: 7+ years
+Complexity: Sophisticated
+Style: Active Selection
+Differentiator: Quality + Defense
+Management Fee: 1.55% per annum (no performance fee)
+Benchmark: Nifty 50 TRI Index
+
+Overview:
+PRIME VELOCITY is a diversified stock portfolio designed to create long-term wealth for clients. Owns quality firms that compound their earnings within a core-satellite framework. Has leeway to park up to 25% in debt, arbitrage, gold, and alternatives when markets are overvalued.
+
+Investment Approach (4 Tenets):
+1. Market-cap agnostic: High-quality companies exist across all market caps. Prioritizes quality businesses irrespective of market cap, avoiding only microcaps due to liquidity risks.
+2. Great companies at a reasonable price: balances growth pursuit with valuation discipline. Follows Buffett's philosophy — great companies at fair prices rather than fair companies at great prices.
+3. Bottom-up stock selection: analysts understand companies and sectors thoroughly to know the source of their moat; select businesses that can compound earnings long-term.
+4. Macro positioning: tracks interest rates, capital flows, economic growth (global and India), and behavioral indicators of greed/fear to determine portfolio positioning.
+
+Core-Satellite Design:
+- Core (60%): quality secular growth compounders — stable, long-term holdings
+- Satellite (40%): tactical or cyclical opportunities — captures high-return tactical plays
+- Active defence: up to 25% defensive allocation in overvalued markets (invested in debt/arbitrage/gold, NOT cash)
+
+QQM Framework (Portfolio Construction — 3 Layers):
+1. Quantitative Screening: filter listed universe through metrics on growth, shareholder returns, profitability, balance sheet strength. Only companies passing these advance to watchlist.
+2. Qualitative Analysis: vetting for management quality, promises vs. performance track record, capital allocation decisions, inorganic moves, regulatory compliance. Investment committee has two decades tracking India Inc across three market cycles.
+3. Macro Overlay: monitors global equity, bond, currency, and commodity markets; tracks regulatory and policy developments. Macro lens determines non-equity allocation, core-satellite mix, and sector positioning.
+
+Suitability (Who Should Invest in Prime Velocity):
+- Young or mid-career employees targeting a retirement corpus
+- Seniors seeking to leave behind a legacy for their family
+- Clients seeking to meet 7-year plus wealth goals
+- Clients seeking a high-risk, high-return portfolio managed by seasoned professionals
+- High risk appetite investors with 7+ year horizons seeking maximum equity wealth creation
+
+=== STRATEGY COMPARISON TABLE ===
+Feature         | PRIME VISION        | PRIME SYNERGY        | PRIME VELOCITY
+Investment      | MFs (Direct)        | MFs + Stocks         | Direct Stocks
+Risk            | Moderate–Very High  | Moderate–High        | Very High
+Horizon         | 3–7+ years          | 5–7+ years           | 7+ years
+Equity Range    | 60–80% (fixed)      | Dynamic (70–100%)    | Dynamic (up to ~75–100%)
+Style           | Strategic Allocation| Tactical Allocation  | Active Selection
+Differentiator  | Timeline-based      | Market-responsive    | Quality + Defense
+Complexity      | Simple              | Moderate             | Sophisticated
+Management Fee  | 0.75%               | 1.15%                | 1.55%
+Benchmark       | Nifty 50 Hybrid 50:50| Nifty 50 Hybrid 50:50| Nifty 50 TRI
+
+FEE SUMMARY:
+All strategies: No profit sharing, no hidden charges, exit load 1% (within year 1), 0.5% (within year 2)
+Prime Vision: 0.75% p.a.
+Prime Synergy: 1.15% p.a.
+Prime Velocity: 1.55% p.a.
+
+Minimum Investment: Rs 50 lakh per PAN (can be spread across strategies)
+
+IMPORTANT DISCLAIMERS:
+- PrimeInvestor Financial Research Private Limited is a SEBI registered portfolio manager, Reg. No. INP000009658
+- Investments in securities markets are subject to market risks
+- Past performance is not indicative of future returns
+- Please read the Terms & Conditions and Disclosure Document at https://primeinvestor.in/portfolio-management-services/
+`;
+
+// ────────────────────────────────────────────────────
+// STATE
+// ────────────────────────────────────────────────────
+let groqApiKey = localStorage.getItem('groq_api_key') || '';
+let conversationHistory = [];
+let isStreaming = false;
+
+// ────────────────────────────────────────────────────
+// INIT
+// ────────────────────────────────────────────────────
+window.addEventListener('DOMContentLoaded', () => {
+  if (groqApiKey) {
+    document.getElementById('apiKeyInput').value = groqApiKey;
+  }
+});
+
+// ────────────────────────────────────────────────────
+// API KEY
+// ────────────────────────────────────────────────────
+function saveKey() {
+  const val = document.getElementById('apiKeyInput').value.trim();
+  if (!val) { alert('Please enter your Groq API key.'); return; }
+  groqApiKey = val;
+  localStorage.setItem('groq_api_key', val);
+  const btn = document.querySelector('.save-btn');
+  btn.textContent = '✓ Saved';
+  setTimeout(() => btn.textContent = 'Save', 1800);
+}
+
+// ────────────────────────────────────────────────────
+// UI HELPERS
+// ────────────────────────────────────────────────────
+function autoResize(el) {
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 120) + 'px';
+}
+
+function handleKey(e) {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    sendMessage();
+  }
+}
+
+function ask(chip) {
+  const text = chip.textContent;
+  document.getElementById('userInput').value = text;
+  sendMessage();
+}
+
+function appendMessage(role, content) {
+  const chatWindow = document.getElementById('chatWindow');
+
+  // Remove welcome card on first real message
+  const welcome = chatWindow.querySelector('.welcome-card');
+  if (welcome) welcome.remove();
+
+  const msg = document.createElement('div');
+  msg.className = `msg ${role}`;
+
+  const avatar = document.createElement('div');
+  avatar.className = 'avatar';
+  avatar.textContent = role === 'bot' ? 'PI' : 'You';
+
+  const bubble = document.createElement('div');
+  bubble.className = 'bubble';
+  bubble.innerHTML = content;
+
+  msg.appendChild(avatar);
+  msg.appendChild(bubble);
+  chatWindow.appendChild(msg);
+  chatWindow.scrollTop = chatWindow.scrollHeight;
+  return bubble;
+}
+
+function showTyping() {
+  const chatWindow = document.getElementById('chatWindow');
+  const msg = document.createElement('div');
+  msg.className = 'msg bot';
+  msg.id = 'typingMsg';
+
+  const avatar = document.createElement('div');
+  avatar.className = 'avatar';
+  avatar.textContent = 'PI';
+
+  const bubble = document.createElement('div');
+  bubble.className = 'bubble';
+  bubble.innerHTML = '<div class="typing-indicator"><span></span><span></span><span></span></div>';
+
+  msg.appendChild(avatar);
+  msg.appendChild(bubble);
+  chatWindow.appendChild(msg);
+  chatWindow.scrollTop = chatWindow.scrollHeight;
+}
+
+function removeTyping() {
+  const el = document.getElementById('typingMsg');
+  if (el) el.remove();
+}
+
+function formatResponse(text) {
+  // Basic markdown-ish formatting
+  return text
+    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\*(.*?)\*/g, '<em>$1</em>')
+    .replace(/`(.*?)`/g, '<code style="background:rgba(26,157,181,0.15);padding:1px 5px;border-radius:4px;font-family:monospace;font-size:13px;">$1</code>')
+    .replace(/\n{2,}/g, '</p><p>')
+    .replace(/\n/g, '<br>')
+    .replace(/^/, '<p>')
+    .replace(/$/, '</p>');
+}
+
+// ────────────────────────────────────────────────────
+// SEND MESSAGE
+// ────────────────────────────────────────────────────
+async function sendMessage() {
+  if (isStreaming) return;
+
+  const input = document.getElementById('userInput');
+  const userText = input.value.trim();
+  if (!userText) return;
+
+  if (!groqApiKey) {
+    alert('Please enter and save your Groq API key first (top-right of the page).');
+    return;
+  }
+
+  // Hide suggestions after first message
+  const sugg = document.getElementById('suggestions');
+  if (sugg) sugg.style.display = 'none';
+
+  input.value = '';
+  input.style.height = 'auto';
+  isStreaming = true;
+  document.getElementById('sendBtn').disabled = true;
+
+  appendMessage('user', userText);
+
+  conversationHistory.push({ role: 'user', content: userText });
+
+  showTyping();
+
+  try {
+    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${groqApiKey}`
+      },
+      body: JSON.stringify({
+        model: 'llama-3.3-70b-versatile',
+        messages: [
+          {
+            role: 'system',
+            content: CONTEXT
+          },
+          ...conversationHistory
+        ],
+        temperature: 0.4,
+        max_tokens: 1024,
+        stream: true
+      })
+    });
+
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({}));
+      throw new Error(err.error?.message || `HTTP ${response.status}`);
+    }
+
+    removeTyping();
+
+    // Create bot bubble for streaming
+    const botBubble = appendMessage('bot', '');
+    let fullText = '';
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      const chunk = decoder.decode(value, { stream: true });
+      const lines = chunk.split('\n').filter(l => l.trim());
+
+      for (const line of lines) {
+        if (!line.startsWith('data: ')) continue;
+        const data = line.slice(6).trim();
+        if (data === '[DONE]') break;
+        try {
+          const parsed = JSON.parse(data);
+          const delta = parsed.choices?.[0]?.delta?.content || '';
+          fullText += delta;
+          botBubble.innerHTML = formatResponse(fullText);
+          document.getElementById('chatWindow').scrollTop = document.getElementById('chatWindow').scrollHeight;
+        } catch {}
+      }
+    }
+
+    conversationHistory.push({ role: 'assistant', content: fullText });
+
+  } catch (err) {
+    removeTyping();
+    appendMessage('bot', `<span style="color:#f08080;">⚠️ Error: ${err.message}. Please check your Groq API key and try again.</span>`);
+  } finally {
+    isStreaming = false;
+    document.getElementById('sendBtn').disabled = false;
+    document.getElementById('userInput').focus();
+  }
+}
+</script>
+</body>
+</html>
